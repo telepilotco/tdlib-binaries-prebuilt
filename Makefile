@@ -1,4 +1,7 @@
 UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+ARCH = `hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}'`
+endif
 
 .ONESHELL:
 
@@ -52,19 +55,25 @@ ifeq ($(UNAME), Darwin)
 ..
 endif
 	cd deps/td/build ; cmake --build . --target tdjson -- -j 3
+ifeq ($(UNAME), Darwin)
 	cd deps/td/ ; otool -L build/libtdjson.dylib
-	mkdir -p prebuilds/lib/
+endif
+ifeq ($(UNAME), Linux)
+	pwd
+	stat -L libtdjson.so
+endif
+	cd ../../../ ; mkdir -p prebuilds/lib/
 ifeq ($(UNAME), Darwin)
 	cp deps/td/build/libtdjson.dylib prebuilds/lib/`uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.dylib
 endif
 ifeq ($(UNAME), Linux)
 	cp deps/td/build/libtdjson.so prebuilds/lib/`uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.so
+	cd prebuilds && tar -czvf linux-$(ARCH)-glibc.tar.gz lib/linux-`uname -m`.so && cp linux-$(ARCH)-glibc.tar.gz ..
 endif
-	npm pack --dry-run
+	cd .. ; npm pack --dry-run
 
 
 build-lib-musl:
-	#rm -rf prebuilds/lib/
 	mkdir -p deps/td/build
 
 	docker build -t build-lib .
