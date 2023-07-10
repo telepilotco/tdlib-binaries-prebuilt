@@ -1,5 +1,10 @@
 UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+LIB_FILE = `uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.dylib
+ARCH = `uname -m`
+endif
 ifeq ($(UNAME), Linux)
+LIB_FILE = `uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.so
 ARCH = `hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}'`
 endif
 
@@ -41,7 +46,7 @@ test:
 	ls
 
 build-lib:
-	rm -rf prebuilds/lib/
+	rm -rf prebuilds/lib/* ; mkdir -p prebuilds/lib
 	mkdir -p deps/td/build
 ifeq ($(UNAME), Linux)
 	cd deps/td/build ; cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_USE_STATIC_LIBS=TRUE -DZLIB_USE_STATIC_LIBS=TRUE ..
@@ -64,13 +69,15 @@ ifeq ($(UNAME), Linux)
 endif
 	cd ../../../ ; mkdir -p prebuilds/lib/
 ifeq ($(UNAME), Darwin)
-	cp deps/td/build/libtdjson.dylib prebuilds/lib/`uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.dylib
+	cp deps/td/build/libtdjson.dylib prebuilds/lib/$(LIB_FILE)
+	cd prebuilds && tar -czvf darwin-$(ARCH)-unknown.tar.gz lib/$(LIB_FILE) && cp darwin-$(ARCH)-unknown.tar.gz ..
+	npm pack --dry-run
 endif
 ifeq ($(UNAME), Linux)
-	cp deps/td/build/libtdjson.so prebuilds/lib/`uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.so
-	cd prebuilds && tar -czvf linux-$(ARCH)-glibc.tar.gz lib/linux-`uname -m`.so && cp linux-$(ARCH)-glibc.tar.gz ..
-endif
+	cp deps/td/build/libtdjson.so prebuilds/lib/$(LIB_FILE)
+	cd prebuilds && tar -czvf linux-$(ARCH)-glibc.tar.gz lib/$(LIB_FILE) && cp linux-$(ARCH)-glibc.tar.gz ..
 	cd .. ; npm pack --dry-run
+endif
 
 
 build-lib-musl:
