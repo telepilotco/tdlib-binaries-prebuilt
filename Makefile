@@ -25,6 +25,8 @@ endif
 clean:
 	clean-lib
 	clean-local-n8n
+	clean-prebuilds
+	clean-archives
 
 build:
 	build-lib
@@ -40,6 +42,12 @@ clean-lib:
 
 clean-local-n8n:
 	rm -rf ~/.n8n/nodes/
+
+clean-prebuilds:
+	rm -rf prebuilds/
+
+clean-archives:
+	rm -rf *.tar.gz
 
 test:
 	cd td
@@ -64,7 +72,6 @@ ifeq ($(UNAME), Darwin)
 	cd deps/td/ ; otool -L build/libtdjson.dylib
 endif
 ifeq ($(UNAME), Linux)
-	pwd
 	stat -L libtdjson.so
 endif
 	cd ../../../ ; mkdir -p prebuilds/lib/
@@ -80,7 +87,14 @@ ifeq ($(UNAME), Linux)
 endif
 
 
-build-lib-musl:
-	mkdir -p deps/td/build
+build-lib-musl-arm64:
+	rm -rf deps/td/build && mkdir -p deps/td/build
+	rm -rf prebuilds/lib/* ; mkdir -p prebuilds/lib
 
-	docker build -t build-lib .
+	docker build -t build-lib -f Dockerfile-musl . ### use arm64 Dockerfile
+	docker rm dummy
+	docker create --name dummy build-lib
+
+	docker cp -L dummy:/td/build/libtdjson.so prebuilds/lib/linux-aarch64.so
+	cd prebuilds && tar -czvf linux-arm64-musl.tar.gz lib/linux-aarch64.so && cp linux-arm64-musl.tar.gz ..
+	cd .. ; npm pack --dry-run
