@@ -1,6 +1,6 @@
 {
   "name": "tdlib-binaries-prebuilt",
-  "version": "1.8.14-111",
+  "version": "1.8.14",
   "description": "Prebuilt TDLib libraries, distributed with node-pre-gyp",
   "main": "index.js",
   "types": "index.d.ts",
@@ -21,13 +21,12 @@
   },
   "files": [
     "index.js",
-    "index.d.ts",
-    "prebuilds"
+    "index.d.ts"
   ],
   "binary": {
     "module_name": "tdlib",
     "module_path": "prebuilds/{module_name}-{platform}-{arch}-{libc}",
-    "host": "https://node-precompiled-tdlib.telepilot.co/",
+    "host": "https://telepilot.co/",
     "remote_path": "{name}/v{version}",
     "package_name": "{platform}-{arch}-{libc}.tar.gz"
   },
