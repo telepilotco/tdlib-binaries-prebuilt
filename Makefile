@@ -19,7 +19,9 @@ ifeq ($(UNAME), Darwin)
 endif
 ifeq ($(UNAME), Linux)
 #see https://tdlib.github.io/deps/td/build.html?language=JavaScript
-	sudo sudo apt-get install make git zlib1g-dev libssl-dev gperf php-cli cmake g++ -y
+	sudo apt-get update
+	sudo apt-get install make git zlib1g-dev libssl-dev gperf php-cli cmake g++ -y
+	sudo apt-get install npm docker.io -y
 endif
 
 clean:
@@ -91,8 +93,8 @@ build-lib-musl-arm64:
 	rm -rf deps/td/build && mkdir -p deps/td/build
 	rm -rf prebuilds/lib/* ; mkdir -p prebuilds/lib
 
-	docker build -t build-lib -f Dockerfile-musl . ### use arm64 Dockerfile
-	docker rm dummy
+	docker build -t build-lib -f Dockerfile . ### use arm64 Dockerfile
+	-docker rm dummy
 	docker create --name dummy build-lib
 
 	docker cp -L dummy:/td/build/libtdjson.so prebuilds/lib/linux-aarch64.so
