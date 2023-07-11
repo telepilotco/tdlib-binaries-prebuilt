@@ -1,3 +1,5 @@
+[![Build TDLib binaries](https://github.com/telepilotco/tdlib-binaries-prebuilt/actions/workflows/build-binaries.yml/badge.svg)](https://github.com/telepilotco/tdlib-binaries-prebuilt/actions/workflows/build-binaries.yml)
+
 # tdlib-node-pre-gyp
 
 Intention of this plugin is to distribute binary prebuilds of `tdlib` to environments, where compilation is not desired
