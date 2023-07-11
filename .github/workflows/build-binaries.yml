@@ -1,0 +1,107 @@
+name: Build TDLib binaries
+# This workflow can be executed using a command like this:
+# gh workflow run prebuilt-tdlib.yml --ref develop -f tdlib=v1.8.0 \
+# -f npm-version=0.1008000.0 -f npm-tag=latest -f npm-add-tag=td-1.8.0
+on:
+  workflow_dispatch:
+    inputs:
+      tdlib:
+        description: 'TDLib git ref (e.g. v1.8.0 or a commit hash)'
+        type: string
+        required: true
+      npm-version:
+        description: 'prebuilt-tdlib version to publish on npm'
+        type: string
+        required: false
+      npm-tag:
+        description: 'npm tag (e.g. latest, beta), required to publish'
+        type: string
+        required: false
+      npm-add-tag:
+        description: 'Additional npm tag (e.g. td-1.8.0)'
+        type: string
+        required: false
+        
+env:
+  DOCKER_IMAGE_GLIBC: ubuntu:20.04
+  DOCKER_IMAGE_MUSL: alpine:3.16
+  TGZ_ARCH_AMD64: x64
+  TGZ_ARCH_ARM64: arm64
+  
+# NOTE: The ZLIB_USE_STATIC_LIBS option requires CMake >= 3.24
+jobs:
+  build-linux-matrix:
+    name: Build TDLib in docker
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        platform:
+          - amd64
+          - arm64
+        libc:
+          - glibc
+          - musl
+    steps:
+      - uses: actions/checkout@v3
+        with:
+            submodules: 'recursive'
+      - run: docker run --privileged --rm tonistiigi/binfmt --install arm64
+#       - run: docker build -t build -f Dockerfile .
+#       - run: mkdir -p prebuilds/lib
+#       - run: docker create --name dummy build
+#       - run: docker cp -L dummy:/td/build/libtdjson.so prebuilds/lib/libtdjson.so
+#       - run: docker cp -L dummy:/td/build/info.txt prebuilds/lib/info.txt
+#       - run: ldd prebuilds/lib/libtdjson.so
+#       - run: |
+#           cd prebuilds
+#           tar -czvf linux-arm64-musl.tar.gz lib/*
+#           cp linux-arm64-musl.tar.gz ..
+#       - uses: actions/upload-artifact@v3
+#         with:
+#           name: tdlib-linux-x64-musl
+#           path: libtdjson.so
+      - name: Set variables
+        run:  |
+          echo "TGZ_NAME=linux-${{ matrix.platform == 'arm64' && env.TGZ_ARCH_ARM64 || env.TGZ_ARCH_AMD64 }}-${{ matrix.libc }}.tar.gz" >> $GITHUB_ENV
+          echo 'TDLIB_VERSION='`cat deps/td/CMakeLists.txt | sed -nr "s/project\(TDLib VERSION ([0-9.]+) LANGUAGES CXX C\)/\1/p"` >> $GITHUB_ENV
+          echo 'TDLIB_GIT_COMMIT_HASH='`cd deps/td && git rev-parse HEAD` >> $GITHUB_ENV
+#       - name: Show variables
+#         run: |
+#           echo ${{ env.TGZ_NAME }}
+#           echo ${{ env.TDLIB_VERSION }}
+#           echo ${{ env.TDLIB_GIT_COMMIT_HASH }}
+      - name: Build in docker
+        run: |
+          mkdir -p prebuilds/lib
+          cat prebuilt-tdlib-docker.sh
+          docker run \
+            -v $(pwd):/rep \
+            --platform linux/${{ matrix.platform }} \
+            ${{ matrix.libc == 'glibc' && env.DOCKER_IMAGE_GLIBC || env.DOCKER_IMAGE_MUSL }} \
+            sh /rep/prebuilt-tdlib-docker.sh
+      - name: Generate SHA256SUM and Archive
+        run: |
+          cd prebuilds
+          cat lib/info.txt
+          tar -czvf ${{ env.TGZ_NAME }} lib/*
+          cp ${{ env.TGZ_NAME }} ..
+      - name: Upload to version folder
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: tdlib-binaries.telepilot.co
+          username: ${{ vars.SSH_USERNAME }}
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "${{ env.TGZ_NAME }}"
+          target: ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}/
+      - name: Upload to version/git commit hash folder
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: tdlib-binaries.telepilot.co
+          username: ${{ vars.SSH_USERNAME }}
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "${{ env.TGZ_NAME }}"
+          target: /tmp/v${{ env.TDLIB_VERSION }}/${{ env.TDLIB_GIT_COMMIT_HASH }}/
