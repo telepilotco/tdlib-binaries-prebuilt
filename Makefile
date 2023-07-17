@@ -1,12 +1,27 @@
 UNAME := $(shell uname)
+
 ifeq ($(UNAME), Darwin)
-LIB_FILE = `uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.dylib
+LIB_FILE = libtdjson.dylib
 ARCH = `uname -m`
+ifeq ($(ARCH), x86_64)
+ARCH = `x64`
 endif
+NATIVE_LIBC = unknown
+endif
+
 ifeq ($(UNAME), Linux)
-LIB_FILE = `uname -s | tr '[:upper:]' '[:lower:]'`-`uname -m`.so
+LIB_FILE = libtdjson.so
 ARCH = `hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}'`
+NATIVE_LIBC = glibc
 endif
+
+DOCKER_IMAGE_GLIBC = ubuntu:20.04
+DOCKER_IMAGE_MUSL = alpine:3.16
+
+DOCKER_PLATFORM_ARM64 = arm64
+DOCKER_PLATFORM_X64 = amd64
+
+TGZ_NAME = $(UNAME,lc)-$(ARCH)-$(NATIVE_LIBC).tar.gz
 
 .ONESHELL:
 
@@ -24,9 +39,9 @@ ifeq ($(UNAME), Linux)
 	sudo apt-get install npm docker.io -y
 endif
 
+
 clean:
 	clean-lib
-	clean-local-n8n
 	clean-prebuilds
 	clean-archives
 
@@ -42,61 +57,72 @@ publish:
 clean-lib:
 	rm -rf deps/td/build/
 
-clean-local-n8n:
-	rm -rf ~/.n8n/nodes/
-
 clean-prebuilds:
 	rm -rf prebuilds/
 
 clean-archives:
 	rm -rf *.tar.gz
+	rm -rf prebuilds/*.tar.gz
 
-test:
-	cd td
-	ls
+build-lib-native: build-lib-native-compile build-lib-archive
 
-build-lib:
-	rm -rf prebuilds/lib/* ; mkdir -p prebuilds/lib
+build-lib-docker-linux-arm64-glibc:
+	mkdir -p prebuilds/lib
+	docker run \
+	 -v `pwd`:/rep \
+	 --platform linux/$(DOCKER_PLATFORM_ARM64) \
+	 $(DOCKER_IMAGE_GLIBC) \
+	 sh /rep/prebuilt-tdlib-docker.sh
+
+build-lib-docker-linux-arm64-musl:
+	mkdir -p prebuilds/lib
+	docker run \
+	 -v `pwd`:/rep \
+	 --platform linux/$(DOCKER_PLATFORM_ARM64) \
+	 $(DOCKER_IMAGE_MUSL) \
+	 sh /rep/prebuilt-tdlib-docker.sh
+
+build-lib-docker-linux-x64-glibc:
+	mkdir -p prebuilds/lib
+	docker run \
+	 -v `pwd`:/rep \
+	 --platform linux/$(DOCKER_PLATFORM_X64) \
+	 $(DOCKER_IMAGE_GLIBC) \
+	 sh /rep/prebuilt-tdlib-docker.sh
+
+build-lib-docker-linux-x64-musl:
+	mkdir -p prebuilds/lib
+	docker run \
+	 -v `pwd`:/rep \
+	 --platform linux/$(DOCKER_PLATFORM_X64) \
+	 $(DOCKER_IMAGE_MUSL) \
+	 sh /rep/prebuilt-tdlib-docker.sh
+
+
+build-lib-native-compile:
+	mkdir -p prebuilds/lib
+	rm -rf deps/td/build
 	mkdir -p deps/td/build
 ifeq ($(UNAME), Linux)
 	cd deps/td/build ; cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_USE_STATIC_LIBS=TRUE -DZLIB_USE_STATIC_LIBS=TRUE ..
 endif
 ifeq ($(UNAME), Darwin)
 	cd deps/td/build ; cmake -DCMAKE_BUILD_TYPE=Release \
--DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@1.1 \
--DZLIB_INCLUDE_DIR=/opt/homebrew/opt/zlib/include \
--DZLIB_LIBRARY=/opt/homebrew/opt/zlib/lib/libz.a \
--DOPENSSL_USE_STATIC_LIBS=TRUE -DZLIB_USE_STATIC_LIBS=TRUE \
-..
+	 -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@1.1 \
+	 -DZLIB_INCLUDE_DIR=/opt/homebrew/opt/zlib/include \
+	 -DZLIB_LIBRARY=/opt/homebrew/opt/zlib/lib/libz.a \
+	 -DOPENSSL_USE_STATIC_LIBS=TRUE -DZLIB_USE_STATIC_LIBS=TRUE \
+	 ..
 endif
-	cd deps/td/build ; cmake --build . --target tdjson -- -j 3
+	cd deps/td/build ; cmake --build . --target tdjson -- -j 32
 ifeq ($(UNAME), Darwin)
 	cd deps/td/ ; otool -L build/libtdjson.dylib
 endif
 ifeq ($(UNAME), Linux)
 	stat -L libtdjson.so
 endif
-	cd ../../../ ; mkdir -p prebuilds/lib/
-ifeq ($(UNAME), Darwin)
-	cp deps/td/build/libtdjson.dylib prebuilds/lib/$(LIB_FILE)
-	cd prebuilds && tar -czvf darwin-$(ARCH)-unknown.tar.gz lib/$(LIB_FILE) && cp darwin-$(ARCH)-unknown.tar.gz ..
-	npm pack --dry-run
-endif
-ifeq ($(UNAME), Linux)
-	cp deps/td/build/libtdjson.so prebuilds/lib/$(LIB_FILE)
-	cd prebuilds && tar -czvf linux-$(ARCH)-glibc.tar.gz lib/$(LIB_FILE) && cp linux-$(ARCH)-glibc.tar.gz ..
-	cd .. ; npm pack --dry-run
-endif
 
-
-build-lib-musl-arm64:
-	rm -rf deps/td/build && mkdir -p deps/td/build
-	rm -rf prebuilds/lib/* ; mkdir -p prebuilds/lib
-
-	docker build -t build-lib -f Dockerfile . ### use arm64 Dockerfile
-	-docker rm dummy
-	docker create --name dummy build-lib
-
-	docker cp -L dummy:/td/build/libtdjson.so prebuilds/lib/linux-aarch64.so
-	cd prebuilds && tar -czvf linux-arm64-musl.tar.gz lib/linux-aarch64.so && cp linux-arm64-musl.tar.gz ..
-	cd .. ; npm pack --dry-run
+build-lib-archive:
+	cp deps/td/build/$(LIB_FILE) prebuilds/lib/$(LIB_FILE)
+	-sha256sum prebuilds/lib/$(LIB_FILE) >> prebuilds/lib/info.txt
+	cd prebuilds && tar -czvf $(TGZ_NAME) lib/* && cp $(TGZ_NAME) ..

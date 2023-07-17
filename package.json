@@ -1,5 +1,5 @@
 {
-  "name": "tdlib-binaries-prebuilt",
+  "name": "@telepilotco/tdlib-binaries-prebuilt",
   "version": "1.8.14",
   "description": "Prebuilt TDLib libraries, distributed with node-pre-gyp",
   "main": "index.js",
@@ -10,7 +10,8 @@
   "keywords": [
     "telegram",
     "telegram-api",
-    "tdlib"
+    "tdlib",
+    "prebuilt"
   ],
   "repository": {
     "type": "git",

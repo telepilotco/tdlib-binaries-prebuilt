@@ -25,8 +25,10 @@ on:
 env:
   DOCKER_IMAGE_GLIBC: ubuntu:20.04
   DOCKER_IMAGE_MUSL: alpine:3.16
-  TGZ_ARCH_AMD64: x64
-  TGZ_ARCH_ARM64: arm64
+  ARCH_X64: x64
+  ARCH_ARM64: arm64
+  ARCH_X64_DOCKER_PLATFORM: amd64
+  ARCH_ARM64_DOCKER_PLATFORM: arm64
   
 # NOTE: The ZLIB_USE_STATIC_LIBS option requires CMake >= 3.24
 jobs:
@@ -38,7 +40,7 @@ jobs:
       max-parallel: 2
       matrix:
         platform:
-          - amd64
+          - x64
           - arm64
         libc:
           - glibc
@@ -64,7 +66,7 @@ jobs:
 #           path: libtdjson.so
       - name: Set variables
         run:  |
-          echo "TGZ_NAME=linux-${{ matrix.platform == 'arm64' && env.TGZ_ARCH_ARM64 || env.TGZ_ARCH_AMD64 }}-${{ matrix.libc }}.tar.gz" >> $GITHUB_ENV
+          echo "TGZ_NAME=linux-${{ matrix.platform == 'arm64' && env.ARCH_ARM64 || env.ARCH_X64 }}-${{ matrix.libc }}.tar.gz" >> $GITHUB_ENV
           echo 'TDLIB_VERSION='`cat deps/td/CMakeLists.txt | sed -nr "s/project\(TDLib VERSION ([0-9.]+) LANGUAGES CXX C\)/\1/p"` >> $GITHUB_ENV
           echo 'TDLIB_GIT_COMMIT_HASH='`cd deps/td && git rev-parse HEAD` >> $GITHUB_ENV
 #       - name: Show variables
@@ -74,19 +76,21 @@ jobs:
 #           echo ${{ env.TDLIB_GIT_COMMIT_HASH }}
       - name: Build in docker
         run: |
-          mkdir -p prebuilds/lib
-          cat prebuilt-tdlib-docker.sh
-          docker run \
-            -v $(pwd):/rep \
-            --platform linux/${{ matrix.platform }} \
-            ${{ matrix.libc == 'glibc' && env.DOCKER_IMAGE_GLIBC || env.DOCKER_IMAGE_MUSL }} \
-            sh /rep/prebuilt-tdlib-docker.sh
-      - name: Generate SHA256SUM and Archive
+          make build-lib-docker-linux-${{ matrix.platform }}-${{ matrix.libc }}
+#          mkdir -p prebuilds/lib
+#          cat prebuilt-tdlib-docker.sh
+#          docker run \
+#            -v $(pwd):/rep \
+#            --platform linux/${{ matrix.platform == 'arm64' && env.ARCH_ARM64_DOCKER_PLATFORM || env.ARCH_X64_DOCKER_PLATFORM }} \
+#            ${{ matrix.libc == 'glibc' && env.DOCKER_IMAGE_GLIBC || env.DOCKER_IMAGE_MUSL }} \
+#            sh /rep/prebuilt-tdlib-docker.sh
+      - name: Archive
         run: |
-          cd prebuilds
-          cat lib/info.txt
-          tar -czvf ${{ env.TGZ_NAME }} lib/*
-          cp ${{ env.TGZ_NAME }} ..
+          make build-lib-archive
+#          cd prebuilds
+#          cat lib/info.txt
+#          tar -czvf ${{ env.TGZ_NAME }} lib/*
+#          cp ${{ env.TGZ_NAME }} ..
       - name: Upload to version folder
         uses: appleboy/scp-action@v0.1.4
         with:
