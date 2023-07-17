@@ -3,16 +3,18 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
 LIB_FILE = libtdjson.dylib
 ARCH = $(shell uname -m)
-ifeq ($(ARCH), x86_64)
-ARCH = x64
-endif
+
 NATIVE_LIBC = unknown
 endif
 
 ifeq ($(UNAME), Linux)
 LIB_FILE = libtdjson.so
-ARCH = $(shell hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}')
+ARCH = $(shell uname -m)
 NATIVE_LIBC = glibc
+endif
+
+ifeq ($(ARCH), x86_64)
+ARCH = x64
 endif
 
 DOCKER_IMAGE_GLIBC = ubuntu:20.04
