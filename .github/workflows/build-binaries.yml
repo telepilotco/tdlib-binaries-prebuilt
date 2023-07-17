@@ -86,7 +86,7 @@ jobs:
 #            sh /rep/prebuilt-tdlib-docker.sh
       - name: Archive
         run: |
-          make build-lib-archive
+          LIBC=${{ matrix.libc }} make build-lib-archive
 #          cd prebuilds
 #          cat lib/info.txt
 #          tar -czvf ${{ env.TGZ_NAME }} lib/*

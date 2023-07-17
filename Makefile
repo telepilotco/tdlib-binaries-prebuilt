@@ -4,13 +4,13 @@ ifeq ($(UNAME), Darwin)
 LIB_FILE = libtdjson.dylib
 ARCH = $(shell uname -m)
 
-NATIVE_LIBC = unknown
+LIBC ?= unknown
 endif
 
 ifeq ($(UNAME), Linux)
 LIB_FILE = libtdjson.so
 ARCH = $(shell uname -m)
-NATIVE_LIBC = glibc
+LIBC ?= glibc
 endif
 
 ifeq ($(ARCH), x86_64)
@@ -23,7 +23,7 @@ DOCKER_IMAGE_MUSL = alpine:3.16
 DOCKER_PLATFORM_ARM64 = arm64
 DOCKER_PLATFORM_X64 = amd64
 
-TGZ_NAME = $(shell uname | tr '[:upper:]' '[:lower:]')-$(ARCH)-$(NATIVE_LIBC).tar.gz
+TGZ_NAME = $(shell uname | tr '[:upper:]' '[:lower:]')-$(ARCH)-$(LIBC).tar.gz
 
 .ONESHELL:
 
