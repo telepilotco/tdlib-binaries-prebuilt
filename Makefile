@@ -2,16 +2,16 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME), Darwin)
 LIB_FILE = libtdjson.dylib
-ARCH = `uname -m`
+ARCH = $(shell uname -m)
 ifeq ($(ARCH), x86_64)
-ARCH = `x64`
+ARCH = x64
 endif
 NATIVE_LIBC = unknown
 endif
 
 ifeq ($(UNAME), Linux)
 LIB_FILE = libtdjson.so
-ARCH = `hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}'`
+ARCH = $(shell hostnamectl  |  grep 'Architecture' | awk '/Architecture:/{print $$2}')
 NATIVE_LIBC = glibc
 endif
 
@@ -21,7 +21,7 @@ DOCKER_IMAGE_MUSL = alpine:3.16
 DOCKER_PLATFORM_ARM64 = arm64
 DOCKER_PLATFORM_X64 = amd64
 
-TGZ_NAME = $(UNAME,lc)-$(ARCH)-$(NATIVE_LIBC).tar.gz
+TGZ_NAME = $(shell uname | tr '[:upper:]' '[:lower:]')-$(ARCH)-$(NATIVE_LIBC).tar.gz
 
 .ONESHELL:
 
@@ -40,10 +40,7 @@ ifeq ($(UNAME), Linux)
 endif
 
 
-clean:
-	clean-lib
-	clean-prebuilds
-	clean-archives
+clean: clean-lib clean-prebuilds clean-archives
 
 build:
 	build-lib
@@ -121,8 +118,8 @@ endif
 ifeq ($(UNAME), Linux)
 	stat -L libtdjson.so
 endif
+	cp deps/td/build/$(LIB_FILE) prebuilds/lib/$(LIB_FILE)
 
 build-lib-archive:
-	cp deps/td/build/$(LIB_FILE) prebuilds/lib/$(LIB_FILE)
 	-sha256sum prebuilds/lib/$(LIB_FILE) >> prebuilds/lib/info.txt
 	cd prebuilds && tar -czvf $(TGZ_NAME) lib/* && cp $(TGZ_NAME) ..
