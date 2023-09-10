@@ -2,19 +2,18 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME), Darwin)
 LIB_FILE = libtdjson.dylib
-ARCH = $(shell uname -m)
-
+ARCH ?= $(shell uname -m)
 LIBC ?= unknown
 endif
 
 ifeq ($(UNAME), Linux)
 LIB_FILE = libtdjson.so
-ARCH = $(shell uname -m)
+ARCH ?= $(shell uname -m)
 LIBC ?= glibc
 endif
 
 ifeq ($(ARCH), x86_64)
-ARCH = x64
+ARCH ?= x64
 endif
 
 DOCKER_IMAGE_GLIBC = ubuntu:20.04
