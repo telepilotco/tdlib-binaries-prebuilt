@@ -123,5 +123,4 @@ endif
 	cp deps/td/build/$(LIB_FILE) prebuilds/lib/$(LIB_FILE)
 
 build-lib-archive:
-	-sha256sum prebuilds/lib/$(LIB_FILE) >> prebuilds/lib/info.txt
 	cd prebuilds && tar -czvf $(TGZ_NAME) lib/* && cp $(TGZ_NAME) ..
