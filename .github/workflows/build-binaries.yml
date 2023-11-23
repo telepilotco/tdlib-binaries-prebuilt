@@ -115,12 +115,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "${{ env.TGZ_NAME }}"
           target: ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}/
-      - name: Upload to version/git commit hash folder
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: tdlib-binaries.telepilot.co
-          username: ${{ vars.SSH_USERNAME }}
-          port: 22
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "${{ env.TGZ_NAME }}"
-          target: /tmp/v${{ env.TDLIB_VERSION }}/${{ env.TDLIB_GIT_COMMIT_HASH }}/
+      # - name: Upload to version/git commit hash folder
+      #   uses: appleboy/scp-action@v0.1.4
+      #   with:
+      #     host: tdlib-binaries.telepilot.co
+      #     username: ${{ vars.SSH_USERNAME }}
+      #     port: 22
+      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     source: "${{ env.TGZ_NAME }}"
+      #     target: /tmp/v${{ env.TDLIB_VERSION }}/${{ env.TDLIB_GIT_COMMIT_HASH }}/
