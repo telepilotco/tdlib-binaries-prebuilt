@@ -105,7 +105,7 @@ jobs:
           # Ssh user
           user: ${{ vars.SSH_USERNAME }}
           command: |
-            mkdir ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}TTT
+            mkdir -p ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}
       - name: Upload to version folder
         uses: appleboy/scp-action@v0.1.4
         with:
