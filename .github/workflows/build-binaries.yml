@@ -91,6 +91,22 @@ jobs:
 #          cat lib/info.txt
 #          tar -czvf ${{ env.TGZ_NAME }} lib/*
 #          cp ${{ env.TGZ_NAME }} ..
+            - name: ssh-job
+      - name: Create version folder
+        # You may pin to the exact commit or the version.
+        # uses: nekiro/ssh-job@e0d177751aced5bcaf110ce4d782a681e5e12856
+        uses: nekiro/ssh-job@v1.0.5
+        with:
+          # Target machine hostname or ip
+          host: tdlib-binaries.telepilot.co
+          # Port to use while connecting
+          port: 22
+          # Ssh private key used to connect to target machine
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Ssh user
+          user: ${{ vars.SSH_USERNAME }}
+          command: |
+            mkdir ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}TTT
       - name: Upload to version folder
         uses: appleboy/scp-action@v0.1.4
         with:
