@@ -2,17 +2,19 @@
 
 # tdlib-binaries-prebuilt
 
-Intention of this plugin is to produce binary builds of `tdlib` in a way so that they can be used in 
-`node-pre-gyp` npm package. This can be handy when using `tdlib` in node.js environments, where compilation is not desired
+Intention of this plugin is to produce binary builds of [tdlib/td](https://github.com/tdlib/td) in a way so that they can be used in 
+`node-pre-gyp` npm package. This can be handy when using [tdlib/td](https://github.com/tdlib/td) in node.js environments, where compilation is not desired
 or not possible due to unavailability of tools that are required. 
-Following architectures are supported:
 
- + linux-x64-glibc
- + linux-x64-musl (x86-64/x86_64 -> x64)
- + linux-arm64-glibc (aarch64 -> arm64)
- + linux-arm64-musl (aarch64 -> arm64)
- - macos-arm64
- - macos-x64
+TD can be compiled from source using specific targets from our Makefile.
+
+Prebuilt binaries are available for following architectures:
+ - [x] linux-x64-glibc
+ - [x] linux-x64-musl (x86-64/x86_64 -> x64)
+ - [x] linux-arm64-glibc (aarch64 -> arm64)
+ - [x] linux-arm64-musl (aarch64 -> arm64)
+ - [x] macos-arm64 - local build
+ - [ ] macos-x64 - not yet built
 
 ## Github Action Builds
 
@@ -20,11 +22,13 @@ Build process is automated with Github Actions for following environments:
 
 - linux-x64-glibc
 - linux-x64-musl
-- linux-arm64-glibc
-- linux-arm64-musl
+- linux-arm64-glibc  (cross-build)
+- linux-arm64-musl  (cross-build)
 
 MacOs / Windows builds are currently not configured, but adding them would be also possible so please submit 
 Issue request if you are willing to have those added, or send a PR.
+
+MacOs binary can be built locally using `build-lib-native` Makefile task.
 
 ## Building o local machine
 
