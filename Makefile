@@ -13,7 +13,7 @@ LIBC ?= glibc
 endif
 
 ifeq ($(ARCH), x86_64)
-ARCH ?= x64
+ARCH = x64
 endif
 
 DOCKER_IMAGE_GLIBC = ubuntu:20.04
@@ -113,6 +113,9 @@ ifeq ($(UNAME), Linux)
 	cd deps/td/build ; cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_USE_STATIC_LIBS=TRUE -DZLIB_USE_STATIC_LIBS=TRUE ..
 endif
 ifeq ($(UNAME), Darwin)
+	# Alternatively, use libz for
+	# macos-x64: /usr/local/Cellar/zlib/1.3/lib/libz.a
+	# macos-arm64: /opt/homebrew/opt/zlib/lib/libz.a
 	cd deps/td/build ; cmake -DCMAKE_BUILD_TYPE=Release \
 	 -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@1.1 \
 	 -DZLIB_INCLUDE_DIR=/opt/homebrew/opt/zlib/include \
