@@ -14,7 +14,7 @@ Prebuilt binaries are available for following architectures:
  - [x] linux-arm64-glibc (aarch64 -> arm64)
  - [x] linux-arm64-musl (aarch64 -> arm64)
  - [x] macos-arm64 - local build
- - [ ] macos-x64 - not yet built
+ - [x] macos-x64 - local build (x86_64 -> x64)
 
 ## Github Action Builds
 
