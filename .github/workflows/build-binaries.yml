@@ -1,27 +1,11 @@
 name: Build TDLib binaries
-# This workflow can be executed using a command like this:
-# gh workflow run prebuilt-tdlib.yml --ref develop -f tdlib=v1.8.0 \
-# -f npm-version=0.1008000.0 -f npm-tag=latest -f npm-add-tag=td-1.8.0
+
+
 on:
-  workflow_dispatch:
-    inputs:
-      tdlib:
-        description: 'TDLib git ref (e.g. v1.8.0 or a commit hash)'
-        type: string
-        required: true
-      npm-version:
-        description: 'prebuilt-tdlib version to publish on npm'
-        type: string
-        required: false
-      npm-tag:
-        description: 'npm tag (e.g. latest, beta), required to publish'
-        type: string
-        required: false
-      npm-add-tag:
-        description: 'Additional npm tag (e.g. td-1.8.0)'
-        type: string
-        required: false
-        
+  release:
+    types:
+      - created
+
 env:
   DOCKER_IMAGE_GLIBC: ubuntu:20.04
   DOCKER_IMAGE_MUSL: alpine:3.16
@@ -29,7 +13,7 @@ env:
   ARCH_ARM64: arm64
   ARCH_X64_DOCKER_PLATFORM: amd64
   ARCH_ARM64_DOCKER_PLATFORM: arm64
-  
+
 # NOTE: The ZLIB_USE_STATIC_LIBS option requires CMake >= 3.24
 jobs:
   build-linux-matrix:
@@ -91,30 +75,30 @@ jobs:
 #          cat lib/info.txt
 #          tar -czvf ${{ env.TGZ_NAME }} lib/*
 #          cp ${{ env.TGZ_NAME }} ..
-      - name: Create version folder
-        # You may pin to the exact commit or the version.
-        # uses: nekiro/ssh-job@e0d177751aced5bcaf110ce4d782a681e5e12856
-        uses: nekiro/ssh-job@v1.0.5
-        with:
-          # Target machine hostname or ip
-          host: tdlib-binaries.telepilot.co
-          # Port to use while connecting
-          port: 22
-          # Ssh private key used to connect to target machine
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Ssh user
-          user: ${{ vars.SSH_USERNAME }}
-          command: |
-            mkdir -p ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}
-      - name: Upload to version folder
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: tdlib-binaries.telepilot.co
-          username: ${{ vars.SSH_USERNAME }}
-          port: 22
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "${{ env.TGZ_NAME }}"
-          target: ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}/
+#      - name: Create version folder
+#        # You may pin to the exact commit or the version.
+#        # uses: nekiro/ssh-job@e0d177751aced5bcaf110ce4d782a681e5e12856
+#        uses: nekiro/ssh-job@v1.0.5
+#        with:
+#          # Target machine hostname or ip
+#          host: tdlib-binaries.telepilot.co
+#          # Port to use while connecting
+#          port: 22
+#          # Ssh private key used to connect to target machine
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          # Ssh user
+#          user: ${{ vars.SSH_USERNAME }}
+#          command: |
+#            mkdir -p ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}
+#      - name: Upload to version folder
+#        uses: appleboy/scp-action@v0.1.4
+#        with:
+#          host: tdlib-binaries.telepilot.co
+#          username: ${{ vars.SSH_USERNAME }}
+#          port: 22
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          source: "${{ env.TGZ_NAME }}"
+#          target: ${{ vars.TARGET_UPLOAD_FOLDER }}/v${{ env.TDLIB_VERSION }}/
       # - name: Upload to version/git commit hash folder
       #   uses: appleboy/scp-action@v0.1.4
       #   with:
@@ -124,3 +108,12 @@ jobs:
       #     key: ${{ secrets.SSH_PRIVATE_KEY }}
       #     source: "${{ env.TGZ_NAME }}"
       #     target: /tmp/v${{ env.TDLIB_VERSION }}/${{ env.TDLIB_GIT_COMMIT_HASH }}/
+      - name: Upload to GitHub Releases
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: "./${{ env.TGZ_NAME }}"
+          asset_name: ${{ env.TGZ_NAME }}
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

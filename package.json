@@ -27,8 +27,8 @@
   "binary": {
     "module_name": "tdlib",
     "module_path": "prebuilds",
-    "host": "https://telepilot.co/",
-    "remote_path": "{name}/v{version}",
+    "host": "https://github.com/",
+    "remote_path": "telepilotco/{name}/releases/download/v{version}",
     "package_name": "{platform}-{arch}-{libc}.tar.gz"
   },
   "scripts": {
