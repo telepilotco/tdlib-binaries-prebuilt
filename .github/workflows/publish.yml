@@ -30,6 +30,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        registry-url: '$NPM_REGISTRY'
     - name: Use NPM Token
       # You may pin to the exact commit or the version.
       # uses: dkershner6/use-npm-token-action@99c5b17c84a15e44fdcef6712b34b76f8f0493b0
@@ -40,4 +41,4 @@ jobs:
         # The location of your Node workspace (needs to be a sibling of package.json)
   #      workspace: # optional, default is ./
 
-    - run: npm publish --registry=$NPM_REGISTRY --access=public
+    - run: npm publish --access=public
