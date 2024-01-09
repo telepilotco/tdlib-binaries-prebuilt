@@ -45,4 +45,4 @@ jobs:
         if [ -n "$NPM_REGISTRY" ]; then
           npm config set strict-ssl false
         fi
-    - run: npm publish --access=public
+    - run: npm publish --access=public --registry=$NPM_REGISTRY
